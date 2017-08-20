@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include "game.h"
-//#include "engine.h"
 using namespace std;
 
 board game(3, 3);
@@ -19,9 +18,11 @@ void random_move()
 
 int main()
 {
+	system("cls");
 	game.draw();
 	while (!game.end)
 	{
+		game.save_cache();
 		if (!game.turn)
 		{
 			// PC
@@ -32,11 +33,12 @@ int main()
 			int x;
 			printf("Enter move: ");
 			scanf("%d", &x);
-			if (game.check_valid(x))
+			if (x == -1) return 0;
+			else if (game.check_valid(x))
 				game.move(x);
 			else random_move();
 		}
-		game.draw();
+		game.re_draw();
 	}
 	return 0;
 }

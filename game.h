@@ -4,12 +4,22 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+
+#define _WIN32_WINNT 0x0500
+#include <windows.h>
 using namespace std;
 
 const char fill_1 = 178,
 		   fill_2 = 176,
 		   draw_horizontal = 254,
 		   draw_vertical = 219;
+		   
+const int horizontal_gap = 5,
+		  vertical_gap = 2,
+		  margin_top = 0;
+		  
+int cache[100][100];
+COORD origin = {1, 1};
 
 class board
 {
@@ -79,11 +89,17 @@ public:
 			delete status[i];
 		delete status;
 	}
+	
 	void print();
 	void draw();
+	void re_draw();
+	void draw_box(int i, int j);
+	void save_cache();
+	
 	void update(int i, int j, char v);
 	void move(int x);
 	bool check_valid(int x);
+	
 	int height();
 	int width();
 };
@@ -100,7 +116,7 @@ void board::print()
 
 void board::draw()
 {
-	printf("------------------------------------------\n");
+	printf("----------------------------------------------------------------------\n");
 	printf(" %c", draw_horizontal);
 	for (int j = 0; j < n; ++j)
 		if (status[0][j] & 1 || status[0][j] > 15)
@@ -138,8 +154,87 @@ void board::draw()
 		}
 		printf("\n");
 	}
-	printf("------------------------------------------\n");
-}		
+	printf("----------------------------------------------------------------------\n");
+}
+
+void board::draw_box(int i, int j)
+{
+	int x = origin.X + j * (horizontal_gap + 1),
+		y = origin.Y + i * (vertical_gap + 1);
+	if (status[i][j] & 1 || status[i][j] > 15)
+		for (int k = 1; k <= horizontal_gap; ++k)
+		{
+			COORD cursor = {x + k, y};
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+			printf("%c", draw_horizontal);
+		}
+	if (status[i][j] & 2 || status[i][j] > 15)
+		for (int k = 1; k <= vertical_gap; ++k)
+		{
+			COORD cursor = {x + horizontal_gap + 1, y + k};
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+			printf("%c", draw_vertical);
+		}
+	if (status[i][j] & 4 || status[i][j] > 15)
+		for (int k = 1; k <= horizontal_gap; ++k)
+		{
+			COORD cursor = {x + k, y + vertical_gap + 1};
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+			printf("%c", draw_horizontal);
+		}
+	if (status[i][j] & 8 || status[i][j] > 15)
+		for (int k = 1; k <= vertical_gap; ++k)
+		{
+			COORD cursor = {x, y + k};
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+			printf("%c", draw_vertical);
+		}
+	if (status[i][j] > 15)
+	{
+		for (int u = 1; u <= vertical_gap; ++u)
+			for (int v = 1; v <= horizontal_gap; ++v)
+			{
+				COORD cursor = {x + v, y + u};
+				SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+				printf("%c", (status[i][j] == 16)?fill_1:fill_2);
+			}
+	}
+	
+	//reset pointer
+	COORD cursor = {0, m * (vertical_gap + 1) + 4 + margin_top};
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+}
+
+void board::re_draw()
+{
+	// 12
+	for (int i = 0; i < m; ++i)
+		for (int j = 0; j < n; ++j)
+			if (status[i][j] != cache[i][j])
+				draw_box(i, j);
+	COORD cursor = {n * (horizontal_gap + 1) + 14, 2 + margin_top};
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+	printf("%d", points[0]);
+	cursor.X = n * (horizontal_gap + 1) + 14; cursor.Y = 3 + margin_top;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+	printf("%d", points[1]);
+	cursor.X = n * (horizontal_gap + 1) + 2; cursor.Y = 4 + margin_top;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+	if (!end) printf("  Next move: Player %d", (int)turn + 1);
+	else if (points[0] != points[1]) printf("  Player %d wins!         ", (points[0] > points[1])?1:2);
+	else printf("  Draw!                      ");
+	
+	//reset pointer
+	cursor.X = 0; cursor.Y = m * (vertical_gap + 1) + 4 + margin_top;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+}	
+
+void board::save_cache()
+{
+	for (int i = 0; i < m; ++i)
+		for (int j = 0; j < n; ++j)
+			cache[i][j] = status[i][j];
+}
 
 void board::update(int i, int j, char v)
 {
