@@ -6,16 +6,15 @@
 #include <iostream>
 using namespace std;
 
-const char vertical_line = '!',
-		   horizontal_line = '_',
-		   corner_marker = '.',
-		   fill_1 = 223,
-		   fill_2 = 177;
+const char fill_1 = 178,
+		   fill_2 = 176,
+		   draw_horizontal = 254,
+		   draw_vertical = 219;
 
 class board
 {
 private:
-	int m, n, moves;
+	int m, n, moves, id;
 	char **status;
 public:
 	int points[2];
@@ -31,7 +30,7 @@ public:
 				status[i][j] = 0;
 		}
 		points[0] = points[1] = 0;
-		turn = end = moves = 0;
+		turn = end = moves = id = 0;
 	}
 	board(const board &other)
 	{
@@ -47,6 +46,7 @@ public:
 		points[1] = other.points[1];
 		turn = other.turn; end = other.end;
 		moves = other.moves;
+		id = other.id;
 	}
 	board &operator = (const board &other)
 	{
@@ -70,6 +70,7 @@ public:
 		points[1] = other.points[1];
 		turn = other.turn; end = other.end;
 		moves = other.moves;
+		id = other.id;
 		return *this;
 	}
 	~board()
@@ -79,6 +80,7 @@ public:
 		delete status;
 	}
 	void print();
+	void draw();
 	void update(int i, int j, char v);
 	void move(int x);
 	bool check_valid(int x);
@@ -88,45 +90,51 @@ public:
 
 void board::print()
 {
-	printf("\n");
-	for (int j = 0; j < n; ++j)
-		if (status[0][j] & 1) printf("%c%c", corner_marker, horizontal_line);
-		else printf("%c ", corner_marker);
-	printf("%c\n", corner_marker);
 	for (int i = 0; i < m; ++i)
 	{
-		if (status[i][0] & 8) printf("%c", vertical_line);
-		else printf("%c", corner_marker);
 		for (int j = 0; j < n; ++j)
-		{
-			if (status[i][j] == 16) printf("%c%c", fill_1, corner_marker);
-			else if (status[i][j] == 17) printf("%c%c", fill_2, corner_marker);
-			else
-			{
-				if (status[i][j] & 4) printf("%c", horizontal_line);
-				else printf(" ");
-				if (status[i][j] & 2) printf("%c", vertical_line);
-				else printf("%c", corner_marker);
-			}
-		}
-		if (i == 0) printf("  Player 1: %d", points[0]);
-		else if (i == 1) printf("  Player 2: %d", points[1]);
-		else if (i == 2)
-		{
-			if (end)
-			{
-				if (points[0] != points[1])
-					printf("  Player %d wins!", (points[0] > points[1])?1:2);
-				else
-					printf("  Draw!");
-			}
-			else
-				printf("  Next move: Player %d", (int)turn + 1);
-		}
+			printf("%d ", status[i][j]);
 		printf("\n");
 	}
-	printf("\n");
 }
+
+void board::draw()
+{
+	printf("----------------------------------------\n");
+	printf(" %c", draw_horizontal);
+	for (int j = 0; j < n; ++j)
+		if (status[0][j] & 1 || status[0][j] > 15)
+			printf("%c%c%c%c%c%c", draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal);
+		else printf("     %c", draw_horizontal);
+	printf("  Game #%d\n", id);
+	for (int i = 0; i < m; ++i)
+	{
+		for (int k = 0; k < 2; ++k)
+		{
+			if (status[i][0] & 8 || status[i][0] > 15)
+				printf(" %c", draw_vertical);
+			else printf("  ");
+			for (int j = 0; j < n; ++j)
+				if (status[i][j] == 16) printf("%c%c%c%c%c%c", fill_1, fill_1, fill_1, fill_1, fill_1, draw_vertical);
+				else if (status[i][j] == 17) printf("%c%c%c%c%c%c", fill_2, fill_2, fill_2, fill_2, fill_2, draw_vertical);
+				else if (status[i][j] & 2) printf("     %c", draw_vertical);
+				else printf("      ");
+			if (i == 0)
+			{
+				if (k == 0) printf("  Player 1: %d", points[0]);
+				else if (k == 1) printf("  Player 2: %d", points[1]);
+			}
+			printf("\n");
+		}
+		printf(" %c", draw_horizontal);
+		for (int j = 0; j < n; ++j)
+			if (status[i][j] & 4 || status[i][j] > 15) printf("%c%c%c%c%c%c", draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal);
+			else printf("     %c", draw_horizontal);
+		if (i == 0) printf("  Next move: Player %d", (int)turn + 1);
+		printf("\n");
+	}
+	printf("----------------------------------------\n");
+}		
 
 void board::update(int i, int j, char v)
 {
@@ -135,6 +143,7 @@ void board::update(int i, int j, char v)
 
 void board::move(int x)
 {
+	printf("Last move: %d\n", x);
 	bool bonus = 0;
 	if (x < (m + 1) * n) //horizontal line
 	{

@@ -7,6 +7,7 @@ using namespace std;
 int main()
 {
 	board game(3, 3);
+	game.draw();
 	while (!game.end)
 	{
 		int m = game.height(), n = game.width();
@@ -31,7 +32,7 @@ int main()
 			else
 				goto generate_move;
 		}
-		game.print();
+		game.draw();
 	}
 	return 0;
 }
