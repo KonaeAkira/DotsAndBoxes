@@ -100,7 +100,7 @@ void board::print()
 
 void board::draw()
 {
-	printf("----------------------------------------\n");
+	printf("------------------------------------------\n");
 	printf(" %c", draw_horizontal);
 	for (int j = 0; j < n; ++j)
 		if (status[0][j] & 1 || status[0][j] > 15)
@@ -130,10 +130,15 @@ void board::draw()
 		for (int j = 0; j < n; ++j)
 			if (status[i][j] & 4 || status[i][j] > 15) printf("%c%c%c%c%c%c", draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal);
 			else printf("     %c", draw_horizontal);
-		if (i == 0) printf("  Next move: Player %d", (int)turn + 1);
+		if (i == 0)
+		{
+			if (!end) printf("  Next move: Player %d", (int)turn + 1);
+			else if (points[0] != points[1]) printf("  Player %d wins!", (points[0] > points[1])?1:2);
+			else printf("  Draw!");
+		}
 		printf("\n");
 	}
-	printf("----------------------------------------\n");
+	printf("------------------------------------------\n");
 }		
 
 void board::update(int i, int j, char v)
