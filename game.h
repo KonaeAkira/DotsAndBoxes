@@ -28,6 +28,7 @@ private:
 	char **status;
 public:
 	int points[2];
+	long long hash;
 	bool turn, end;
 	board(int x, int y)
 	{
@@ -41,6 +42,7 @@ public:
 		}
 		points[0] = points[1] = 0;
 		turn = end = moves = id = 0;
+		hash = 0;
 	}
 	board(const board &other)
 	{
@@ -57,6 +59,7 @@ public:
 		turn = other.turn; end = other.end;
 		moves = other.moves;
 		id = other.id;
+		hash = other.hash;
 	}
 	board &operator = (const board &other)
 	{
@@ -81,6 +84,7 @@ public:
 		turn = other.turn; end = other.end;
 		moves = other.moves;
 		id = other.id;
+		hash = other.hash;
 		return *this;
 	}
 	~board()
@@ -95,6 +99,7 @@ public:
 	void re_draw();
 	void draw_box(int i, int j);
 	void save_cache();
+	void reset();
 	
 	void update(int i, int j, char v);
 	void move(int x);
@@ -102,7 +107,10 @@ public:
 	
 	int height();
 	int width();
-};
+	
+	int generate_move();
+	long long get_hash();
+} game(3, 3);
 
 void board::print()
 {
@@ -112,6 +120,14 @@ void board::print()
 			printf("%d ", status[i][j]);
 		printf("\n");
 	}
+}
+
+void board::reset()
+{
+	for (int i = 0; i < m; ++i)
+		for (int j = 0; j < n; ++j)
+			status[i][j] = 0;
+	turn = points[0] = points[1] = moves = end = 0;
 }
 
 void board::draw()
@@ -201,7 +217,7 @@ void board::draw_box(int i, int j)
 	}
 	
 	//reset pointer
-	COORD cursor = {0, m * (vertical_gap + 1) + 4 + margin_top};
+	COORD cursor = {0, m * (vertical_gap + 1) + 3 + margin_top};
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 }
 
@@ -225,7 +241,7 @@ void board::re_draw()
 	else printf("  Draw!                      ");
 	
 	//reset pointer
-	cursor.X = 0; cursor.Y = m * (vertical_gap + 1) + 4 + margin_top;
+	cursor.X = 0; cursor.Y = m * (vertical_gap + 1) + 3 + margin_top;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 }	
 
@@ -243,7 +259,8 @@ void board::update(int i, int j, char v)
 
 void board::move(int x)
 {
-	printf("Last move: %d\n", x);
+	//printf("Last move: %d\n", x);
+	hash |= 1 << x;
 	bool bonus = 0;
 	if (x < (m + 1) * n) //horizontal line
 	{
@@ -296,6 +313,7 @@ void board::move(int x)
 	}
 	end = (++moves == m * (n + 1) + n * (m + 1)) || (points[0] > m * n >> 1) || (points[1] > m * n >> 1);
 	turn ^= !bonus;
+	hash ^= (!bonus) << 31;
 }
 
 bool board::check_valid(int x)

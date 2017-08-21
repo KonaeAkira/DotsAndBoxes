@@ -1,9 +1,10 @@
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+#include <conio.h>
 #include "game.h"
+#include "engine.h"
 using namespace std;
-
-board game(3, 3);
 
 void random_move()
 {
@@ -16,29 +17,51 @@ void random_move()
 		goto generate_move;
 }
 
+char dump[1000];
+
 int main()
 {
+	srand(time(NULL));
+	new_game:
 	system("cls");
 	game.draw();
 	while (!game.end)
 	{
+		int x;
 		game.save_cache();
 		if (!game.turn)
 		{
 			// PC
-			random_move();
+			x = game.generate_move();
+			game.move(x);
 		}
 		else
 		{
-			int x;
 			printf("Enter move: ");
-			scanf("%d", &x);
-			if (x == -1) return 0;
-			else if (game.check_valid(x))
-				game.move(x);
-			else random_move();
+			if (scanf("%d", &x) == 1)
+			{
+				if (x == -1) return 0;
+				else if (game.check_valid(x))
+				{
+					printf("                \n");
+					game.move(x);
+				}
+				else
+				{
+					printf("Invalid input!\n");
+					random_move();
+				}
+			}
+			else
+			{
+				scanf("%s", dump);
+				printf("Invalid input!\n");
+			}
 		}
 		game.re_draw();
 	}
+	getch();
+	game.reset();
+	goto new_game;
 	return 0;
 }
