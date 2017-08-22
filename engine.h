@@ -5,14 +5,10 @@
 #include <map>
 #include <cstdlib>
 #include <vector>
-#include <math.h>
-using namespace std;
-
-const int mode = 0;
 
 const long long max_execution = 1e15;
 
-const int max_depth = 12, //log2(max_execution) / log2(max_moves),
+const int max_depth = 11, // odd number for best result
 		  max_cycles = 10000,
 		  inf = 1e9;
 		  
@@ -37,8 +33,7 @@ long long board::get_hash()
 
 data prune(board cur, int depth, int alpha, int beta, const bool &org_turn) // alpha-beta pruning
 {
-	int m = game_height, n = game_width,
-		max_moves = m * (n + 1) + n * (m + 1);
+	int m = game_height, n = game_width;
 	data best, tmp = {cur.points[org_turn] - cur.points[!org_turn], 0};
 	map <long long, data>::iterator ptr;
 	if (cur.end) tmp.value += (cur.points[org_turn] >= cur.points[!org_turn])?100000:(-100000);
@@ -90,54 +85,13 @@ data prune(board cur, int depth, int alpha, int beta, const bool &org_turn) // a
 	}
 }
 
-data estimate(board &cur, int cycles = max_cycles)
-{
-	int m = game_height, n = game_width,
-		org_stash[1000], stash[1000], org_cnt = 0, cnt,
-		wins = 0, total = cycles;
-	for (int i = 0; i < n * (m + 1) + m * (n + 1); ++i)
-		if (cur.check_valid(i)) org_stash[org_cnt++] = i;
-	while (cycles--)
-	{
-		board tar(cur); cnt = org_cnt;
-		for (int i = 0; i < org_cnt; ++i)
-			stash[i] = org_stash[i];
-		while (!tar.end)
-		{
-			if (tar.turn == org_turn) //random move
-			{
-				new_move:
-				if (cnt <= 0) break;
-				int x = rand() % cnt--;
-				if (x != cnt) swap(stash[x], stash[cnt]);
-				if (tar.check_valid(stash[cnt]))
-					tar.move(stash[cnt]);
-				else 
-					goto new_move;
-			}
-			else
-			{
-				hash_map.clear();
-				data tmp = prune(tar, 1, -inf, inf, tar.turn);
-				tar.move(tmp.move);
-			}
-		}
-		if (tar.points[org_turn] >= tar.points[!org_turn])
-			++wins;
-	}
-	data tmp = {wins, total};
-	printf("%d %d                   \n", wins, total);
-	return tmp;
-}
-
 int board::generate_move()
 {
 	start_time = clock();
-	org_turn = this->turn;
 	hash_map.clear();
 	data result = prune(*this, max_depth, -inf, inf, org_turn);
 	end_time = clock();
-	printf("\nTime: %.3fs         \n", (end_time - start_time) / double(CLOCKS_PER_SEC));
+	printf("\nTime: %.3fs    \n", (end_time - start_time) / double(CLOCKS_PER_SEC));
 	return result.move;
 }
 

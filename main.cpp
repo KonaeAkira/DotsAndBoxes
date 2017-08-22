@@ -19,7 +19,7 @@ int main()
 	{
 		int x;
 		game.save_cache();
-		if (game.turn)
+		if (!game.turn)
 		{
 			// PC
 			x = game.generate_move();
