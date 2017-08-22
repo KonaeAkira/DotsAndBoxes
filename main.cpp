@@ -31,7 +31,7 @@ int main()
 			if (scanf("%d", &x) == 1)
 			{
 				if (x == -1) return 0;
-				else if (1)//(game.check_valid(x))
+				else if (game.check_valid(x))
 				{
 					printf("                \n");
 					game.move(x);

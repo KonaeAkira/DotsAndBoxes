@@ -5,10 +5,14 @@
 #include <map>
 #include <cstdlib>
 #include <vector>
+#include <math.h>
+using namespace std;
 
 const int mode = 0;
 
-const int max_depth = 12,
+const long long max_execution = 1e15;
+
+const int max_depth = 12, //log2(max_execution) / log2(max_moves),
 		  max_cycles = 10000,
 		  inf = 1e9;
 		  
@@ -19,7 +23,8 @@ struct data
 
 map <long long, data> hash_map;
 bool org_turn;
-int interval = 3, last = -100;
+int interval = 3, last = -100,
+	start_time, end_time;
 
 long long board::get_hash()
 {
@@ -127,31 +132,13 @@ data estimate(board &cur, int cycles = max_cycles)
 
 int board::generate_move()
 {
+	start_time = clock();
 	org_turn = this->turn;
-	if (mode == 0) // alpha-beta pruning
-	{
-		hash_map.clear();
-		data result = prune(*this, max_depth, -inf, inf, org_turn);
-		return result.move;
-	}
-	else if (mode == 1) // random estimation
-	{
-		float best = 0; int move;
-		for (int i = 0; i < max_moves; ++i)
-			if (this->check_valid(i))
-			{
-				board cur(*this);
-				cur.move(i);
-				data tmp = estimate(cur);
-				float result = (float)tmp.value / tmp.move;
-				if (result >= best)
-				{
-					best = result;
-					move = i;
-				}
-			}
-		return move;
-	}
+	hash_map.clear();
+	data result = prune(*this, max_depth, -inf, inf, org_turn);
+	end_time = clock();
+	printf("\nTime: %.3fs         \n", (end_time - start_time) / double(CLOCKS_PER_SEC));
+	return result.move;
 }
 
 #endif
