@@ -12,14 +12,13 @@ int main()
 {
 	board game;
 	srand(time(NULL));
-	new_game:
 	system("cls");
 	game.draw();
 	while (!game.end)
 	{
 		int x;
 		game.save_cache();
-		if (!game.turn)
+		if (game.turn)
 		{
 			// PC
 			x = game.generate_move();
@@ -49,6 +48,7 @@ int main()
 			}
 		}
 		game.re_draw();
+		//getch();
 	}
 	return 0;
 }

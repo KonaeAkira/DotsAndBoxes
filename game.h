@@ -135,8 +135,8 @@ void board::draw()
 				else printf("      ");
 			if (i == 0)
 			{
-				if (k == 0) printf("  Player 1: %d", points[0]);
-				else if (k == 1) printf("  Player 2: %d", points[1]);
+				if (k == 0) printf("  %c Player 1: %d", fill_1, points[0]);
+				else if (k == 1) printf("  %c Player 2: %d", fill_2, points[1]);
 			}
 			printf("\n");
 		}
@@ -212,10 +212,10 @@ void board::re_draw()
 		for (int j = 0; j < n; ++j)
 			if (status[i][j] != cache[i][j])
 				draw_box(i, j);
-	COORD cursor = {n * (horizontal_gap + 1) + 14, 2 + margin_top};
+	COORD cursor = {n * (horizontal_gap + 1) + 16, 2 + margin_top};
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 	printf("%d", points[0]);
-	cursor.X = n * (horizontal_gap + 1) + 14; cursor.Y = 3 + margin_top;
+	cursor.X = n * (horizontal_gap + 1) + 16; cursor.Y = 3 + margin_top;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 	printf("%d", points[1]);
 	cursor.X = n * (horizontal_gap + 1) + 2; cursor.Y = 4 + margin_top;
@@ -244,7 +244,6 @@ void board::update(int i, int j, char v)
 void board::move(int x)
 {
 	int m = game_height, n = game_width;
-	//printf("Last move: %d\n", x);
 	hash ^= 1 << x;
 	bool bonus = 0;
 	if (x < (m + 1) * n) //horizontal line
@@ -296,7 +295,7 @@ void board::move(int x)
 			}
 		}
 	}
-	end = (points[0] > m * n >> 1 || points[1] > m * n >> 1);
+	end = points[0] + points[1] == m * n;
 	turn ^= !bonus;
 	hash ^= (!bonus) << 31;
 }
