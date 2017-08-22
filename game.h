@@ -18,80 +18,53 @@ const int horizontal_gap = 5,
 		  vertical_gap = 2,
 		  margin_top = 0;
 		  
-int cache[100][100];
+const int game_height = 3,
+		  game_width = 3,
+		  max_moves = game_height * (game_width + 1) + game_width * (game_height + 1);
+		  
+int cache[game_height][game_width];
 COORD origin = {1, 1};
 
 class board
 {
 private:
-	int m, n, moves, id;
-	char **status;
+	int id;
+	char status[game_height][game_width];
 public:
 	int points[2];
 	long long hash;
 	bool turn, end;
-	board(int x, int y)
+	board()
 	{
-		m = x; n = y;
-		status = new char*[m];
-		for (int i = 0; i < m; ++i)
-		{
-			status[i] = new char[n];
-			for (int j = 0; j < n; ++j)
+		for (int i = 0; i < game_height; ++i)
+			for (int j = 0; j < game_height; ++j)
 				status[i][j] = 0;
-		}
 		points[0] = points[1] = 0;
-		turn = end = moves = id = 0;
+		turn = end = id = 0;
 		hash = 0;
 	}
 	board(const board &other)
 	{
-		m = other.m; n = other.n;
-		status = new char*[m];
-		for (int i = 0; i < m; ++i)
-		{
-			status[i] = new char[n];
-			for (int j = 0; j < n; ++j)
+		for (int i = 0; i < game_height; ++i)
+			for (int j = 0; j < game_height; ++j)
 				status[i][j] = other.status[i][j];
-		}
 		points[0] = other.points[0];
 		points[1] = other.points[1];
 		turn = other.turn; end = other.end;
-		moves = other.moves;
 		id = other.id;
 		hash = other.hash;
 	}
 	board &operator = (const board &other)
 	{
-		if (m != other.m || n != other.n)
-		{
-			this->~board();
-			m = other.m; n = other.n;
-			status = new char*[m];
-			for (int i = 0; i < m; ++i)
-			{
-				status[i] = new char[n];
-				for (int j = 0; j < n; ++j)
-					status[i][j] = other.status[i][j];
-			}
-		}
-		else
-			for (int i = 0; i < m; ++i)
-				for (int j = 0; j < n; ++j)
-					status[i][j] = other.status[i][j];
+		for (int i = 0; i < game_height; ++i)
+			for (int j = 0; j < game_height; ++j)
+				status[i][j] = other.status[i][j];
 		points[0] = other.points[0];
 		points[1] = other.points[1];
 		turn = other.turn; end = other.end;
-		moves = other.moves;
 		id = other.id;
 		hash = other.hash;
 		return *this;
-	}
-	~board()
-	{
-		for (int i = 0; i < m; ++i)
-			delete status[i];
-		delete status;
 	}
 	
 	void print();
@@ -105,18 +78,26 @@ public:
 	void move(int x);
 	bool check_valid(int x);
 	
-	int height();
-	int width();
-	
 	int generate_move();
 	long long get_hash();
-} game(3, 3);
+	void random_move();
+};
+
+void board::random_move()
+{
+	generate_move:
+	int x = rand() % max_moves;
+	if (check_valid(x))
+		move(x);
+	else
+		goto generate_move;
+}
 
 void board::print()
 {
-	for (int i = 0; i < m; ++i)
+	for (int i = 0; i < game_height; ++i)
 	{
-		for (int j = 0; j < n; ++j)
+		for (int j = 0; j < game_width; ++j)
 			printf("%d ", status[i][j]);
 		printf("\n");
 	}
@@ -124,14 +105,15 @@ void board::print()
 
 void board::reset()
 {
-	for (int i = 0; i < m; ++i)
-		for (int j = 0; j < n; ++j)
+	for (int i = 0; i < game_height; ++i)
+		for (int j = 0; j < game_width; ++j)
 			status[i][j] = 0;
-	turn = points[0] = points[1] = moves = end = 0;
+	turn = points[0] = points[1] = end = 0;
 }
 
 void board::draw()
 {
+	int m = game_height, n = game_width;
 	printf("----------------------------------------------------------------------\n");
 	printf(" %c", draw_horizontal);
 	for (int j = 0; j < n; ++j)
@@ -175,6 +157,7 @@ void board::draw()
 
 void board::draw_box(int i, int j)
 {
+	int m = game_height, n = game_width;
 	int x = origin.X + j * (horizontal_gap + 1),
 		y = origin.Y + i * (vertical_gap + 1);
 	if (status[i][j] & 1 || status[i][j] > 15)
@@ -224,6 +207,7 @@ void board::draw_box(int i, int j)
 void board::re_draw()
 {
 	// 12
+	int m = game_height, n = game_width;
 	for (int i = 0; i < m; ++i)
 		for (int j = 0; j < n; ++j)
 			if (status[i][j] != cache[i][j])
@@ -247,8 +231,8 @@ void board::re_draw()
 
 void board::save_cache()
 {
-	for (int i = 0; i < m; ++i)
-		for (int j = 0; j < n; ++j)
+	for (int i = 0; i < game_height; ++i)
+		for (int j = 0; j < game_width; ++j)
 			cache[i][j] = status[i][j];
 }
 
@@ -259,15 +243,16 @@ void board::update(int i, int j, char v)
 
 void board::move(int x)
 {
+	int m = game_height, n = game_width;
 	//printf("Last move: %d\n", x);
-	hash |= 1 << x;
+	hash ^= 1 << x;
 	bool bonus = 0;
 	if (x < (m + 1) * n) //horizontal line
 	{
 		int i = x / n, j = x % n;
 		if (i < m)
 		{
-			status[i][j] |= 1;
+			status[i][j] ^= 1;
 			if (status[i][j] == 15)
 			{
 				status[i][j] = 16 + turn;
@@ -277,7 +262,7 @@ void board::move(int x)
 		}
 		if (i)
 		{
-			status[i - 1][j] |= 4;
+			status[i - 1][j] ^= 4;
 			if (status[i - 1][j] == 15)
 			{
 				status[i - 1][j] = 16 + turn;
@@ -292,7 +277,7 @@ void board::move(int x)
 		int i = x / (n + 1), j = x % (n + 1);
 		if (j < n)
 		{
-			status[i][j] |= 8;
+			status[i][j] ^= 8;
 			if (status[i][j] == 15)
 			{
 				status[i][j] = 16 + turn;
@@ -302,7 +287,7 @@ void board::move(int x)
 		}
 		if (j)
 		{
-			status[i][j - 1] |= 2;
+			status[i][j - 1] ^= 2;
 			if (status[i][j - 1] == 15)
 			{
 				status[i][j - 1] = 16 + turn;
@@ -311,13 +296,14 @@ void board::move(int x)
 			}
 		}
 	}
-	end = (++moves == m * (n + 1) + n * (m + 1)) || (points[0] > m * n >> 1) || (points[1] > m * n >> 1);
+	end = (points[0] > m * n >> 1 || points[1] > m * n >> 1);
 	turn ^= !bonus;
 	hash ^= (!bonus) << 31;
 }
 
 bool board::check_valid(int x)
 {
+	int m = game_height, n = game_width;
 	if (x < 0 || x >= n * (m + 1) + m * (n + 1)) return 0;
 	if (x < (m + 1) * n) //horizontal line
 	{
@@ -349,16 +335,6 @@ bool board::check_valid(int x)
 		}
 	}
 	return 1;
-}
-
-int board::height()
-{
-	return m;
-}
-
-int board::width()
-{
-	return n;
 }
 
 #endif

@@ -6,21 +6,11 @@
 #include "engine.h"
 using namespace std;
 
-void random_move()
-{
-	int m = game.height(), n = game.width();
-	generate_move:
-	int x = rand() % (n * (m + 1) + m * (n + 1));
-	if (game.check_valid(x))
-		game.move(x);
-	else
-		goto generate_move;
-}
-
 char dump[1000];
 
 int main()
 {
+	board game;
 	srand(time(NULL));
 	new_game:
 	system("cls");
@@ -29,7 +19,7 @@ int main()
 	{
 		int x;
 		game.save_cache();
-		if (!game.turn)
+		if (game.turn)
 		{
 			// PC
 			x = game.generate_move();
@@ -41,7 +31,7 @@ int main()
 			if (scanf("%d", &x) == 1)
 			{
 				if (x == -1) return 0;
-				else if (game.check_valid(x))
+				else if (1)//(game.check_valid(x))
 				{
 					printf("                \n");
 					game.move(x);
@@ -49,7 +39,7 @@ int main()
 				else
 				{
 					printf("Invalid input!\n");
-					random_move();
+					game.random_move();
 				}
 			}
 			else
@@ -60,8 +50,5 @@ int main()
 		}
 		game.re_draw();
 	}
-	getch();
-	game.reset();
-	goto new_game;
 	return 0;
 }
