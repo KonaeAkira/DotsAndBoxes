@@ -9,7 +9,7 @@ const bool log_engine = 0;
 
 const long long max_execution = 1e15;
 
-const int max_depth = 7, // odd number for best result
+const int max_depth = 30, // odd number for best result
 		  max_cycles = 10000,
 		  inf = 1e9;
 		  
