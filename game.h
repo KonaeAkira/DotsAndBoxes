@@ -14,8 +14,7 @@ const int game_height = 3, game_width = 3,
 		  max_moves = game_height * (game_width + 1) + game_width * (game_height + 1);
 
 // character set
-const char fill_1 = 178,
-		   fill_2 = 176,
+const char fill_char[2] = {176, 178},
 		   draw_horizontal = 254,
 		   draw_vertical = 219;
 
@@ -39,7 +38,7 @@ public:
 	board()
 	{
 		for (int i = 0; i < game_height; ++i)
-			for (int j = 0; j < game_height; ++j)
+			for (int j = 0; j < game_width; ++j)
 				status[i][j] = 0;
 		points[0] = points[1] = 0;
 		turn = end = id = 0;
@@ -48,24 +47,22 @@ public:
 	board(const board &other)
 	{
 		for (int i = 0; i < game_height; ++i)
-			for (int j = 0; j < game_height; ++j)
+			for (int j = 0; j < game_width; ++j)
 				status[i][j] = other.status[i][j];
 		points[0] = other.points[0];
 		points[1] = other.points[1];
 		turn = other.turn; end = other.end;
-		id = other.id;
-		hash = other.hash;
+		id = other.id; hash = other.hash;
 	}
 	board &operator = (const board &other)
 	{
 		for (int i = 0; i < game_height; ++i)
-			for (int j = 0; j < game_height; ++j)
+			for (int j = 0; j < game_width; ++j)
 				status[i][j] = other.status[i][j];
 		points[0] = other.points[0];
 		points[1] = other.points[1];
 		turn = other.turn; end = other.end;
-		id = other.id;
-		hash = other.hash;
+		id = other.id; hash = other.hash;
 		return *this;
 	}
 	
@@ -119,7 +116,7 @@ void board::draw()
 	printf("----------------------------------------------------------------------\n");
 	printf(" %c", draw_horizontal);
 	for (int j = 0; j < n; ++j)
-		if (status[0][j] & 1 || status[0][j] > 15)
+		if (status[0][j] & 1 || status[0][j] >= 15)
 			printf("%c%c%c%c%c%c", draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal);
 		else printf("     %c", draw_horizontal);
 	printf("  Game #%d\n", id);
@@ -127,24 +124,23 @@ void board::draw()
 	{
 		for (int k = 0; k < 2; ++k)
 		{
-			if (status[i][0] & 8 || status[i][0] > 15)
+			if (status[i][0] & 8 || status[i][0] >= 15)
 				printf(" %c", draw_vertical);
 			else printf("  ");
 			for (int j = 0; j < n; ++j)
-				if (status[i][j] == 16) printf("%c%c%c%c%c%c", fill_1, fill_1, fill_1, fill_1, fill_1, draw_vertical);
-				else if (status[i][j] == 17) printf("%c%c%c%c%c%c", fill_2, fill_2, fill_2, fill_2, fill_2, draw_vertical);
+				if (status[i][j] >= 15) printf("%c%c%c%c%c%c", fill_char[status[i][j] >> 4], fill_char[status[i][j] >> 4], fill_char[status[i][j] >> 4], fill_char[status[i][j] >> 4], fill_char[status[i][j] >> 4], draw_vertical);
 				else if (status[i][j] & 2) printf("     %c", draw_vertical);
 				else printf("      ");
 			if (i == 0)
 			{
-				if (k == 0) printf("  %c Player 1: %d", fill_1, points[0]);
-				else if (k == 1) printf("  %c Player 2: %d", fill_2, points[1]);
+				if (k == 0) printf("  %c Player 1: %d", fill_char[0], points[0]);
+				else if (k == 1) printf("  %c Player 2: %d", fill_char[1], points[1]);
 			}
 			printf("\n");
 		}
 		printf(" %c", draw_horizontal);
 		for (int j = 0; j < n; ++j)
-			if (status[i][j] & 4 || status[i][j] > 15) printf("%c%c%c%c%c%c", draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal);
+			if (status[i][j] & 4 || status[i][j] >= 15) printf("%c%c%c%c%c%c", draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal, draw_horizontal);
 			else printf("     %c", draw_horizontal);
 		if (i == 0)
 		{
@@ -163,35 +159,35 @@ void board::draw_box(int i, int j)
 	int x = origin.X + j * (horizontal_gap + 1),
 		y = origin.Y + i * (vertical_gap + 1);
 	char c;
-	c = (status[i][j] & 1 || status[i][j] > 15)?draw_horizontal:' '; 
+	c = (status[i][j] & 1 || status[i][j] >= 15)?draw_horizontal:' '; 
 	for (int k = 1; k <= horizontal_gap; ++k)
 	{
 		COORD cursor = {x + k, y};
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 		printf("%c", c);
 	}
-	c = (status[i][j] & 2 || status[i][j] > 15)?draw_vertical:' ';
+	c = (status[i][j] & 2 || status[i][j] >= 15)?draw_vertical:' ';
 	for (int k = 1; k <= vertical_gap; ++k)
 	{
 		COORD cursor = {x + horizontal_gap + 1, y + k};
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 		printf("%c", c);
 	}
-	c = (status[i][j] & 4 || status[i][j] > 15)?draw_horizontal:' ';
+	c = (status[i][j] & 4 || status[i][j] >= 15)?draw_horizontal:' ';
 	for (int k = 1; k <= horizontal_gap; ++k)
 	{
 		COORD cursor = {x + k, y + vertical_gap + 1};
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 		printf("%c", c);
 	}
-	c = (status[i][j] & 8 || status[i][j] > 15)?draw_vertical:' ';
+	c = (status[i][j] & 8 || status[i][j] >= 15)?draw_vertical:' ';
 	for (int k = 1; k <= vertical_gap; ++k)
 	{
 		COORD cursor = {x, y + k};
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
 		printf("%c", c);
 	}
-	c = (status[i][j] > 15)?((status[i][j] == 16)?fill_1:fill_2):' ';
+	c = (status[i][j] >= 15)?fill_char[status[i][j] >> 4]:' ';
 	for (int u = 1; u <= vertical_gap; ++u)
 		for (int v = 1; v <= horizontal_gap; ++v)
 		{
@@ -251,20 +247,32 @@ void board::move(int x)
 		int i = x / n, j = x % n;
 		if (i < m)
 		{
-			status[i][j] ^= 1;
-			if (status[i][j] == 15)
+			if (status[i][j] >= 15)
 			{
-				status[i][j] = 16 + turn;
+				bonus = 1;
+				--points[status[i][j] >> 4];
+			}
+			status[i][j] ^= 1;
+			if (status[i][j] >= 15)
+			{
+				status[i][j] ^= status[i][j] & 16;
+				status[i][j] |= 16 * turn;
 				bonus = 1;
 				++points[turn];
 			}
 		}
 		if (i)
 		{
-			status[i - 1][j] ^= 4;
-			if (status[i - 1][j] == 15)
+			if (status[i - 1][j] >= 15)
 			{
-				status[i - 1][j] = 16 + turn;
+				bonus = 1;
+				--points[status[i - 1][j] >> 4];
+			}
+			status[i - 1][j] ^= 4;
+			if (status[i - 1][j] >= 15)
+			{
+				status[i - 1][j] ^= status[i - 1][j] & 16;
+				status[i - 1][j] |= 16 * turn;
 				bonus = 1;
 				++points[turn];
 			}
@@ -276,20 +284,32 @@ void board::move(int x)
 		int i = x / (n + 1), j = x % (n + 1);
 		if (j < n)
 		{
-			status[i][j] ^= 8;
-			if (status[i][j] == 15)
+			if (status[i][j] >= 15)
 			{
-				status[i][j] = 16 + turn;
+				bonus = 1;
+				--points[status[i][j] >> 4];
+			}
+			status[i][j] ^= 8;
+			if (status[i][j] >= 15)
+			{
+				status[i][j] ^= status[i][j] & 16;
+				status[i][j] |= 16 * turn;
 				bonus = 1;
 				++points[turn];
 			}
 		}
 		if (j)
 		{
-			status[i][j - 1] ^= 2;
-			if (status[i][j - 1] == 15)
+			if (status[i][j - 1] >= 15)
 			{
-				status[i][j - 1] = 16 + turn;
+				bonus = 1;
+				--points[status[i][j - 1] >> 4];
+			}
+			status[i][j - 1] ^= 2;
+			if (status[i][j - 1] >= 15)
+			{
+				status[i][j - 1] ^= status[i][j - 1] & 16;
+				status[i][j - 1] |= 16 * turn;
 				bonus = 1;
 				++points[turn];
 			}
@@ -297,7 +317,7 @@ void board::move(int x)
 	}
 	end = points[0] + points[1] == m * n;
 	turn ^= !bonus;
-	hash ^= (!bonus) << 31;
+	hash ^= (long long)(!bonus) << 63;
 }
 
 bool board::check_valid(int x)
@@ -309,12 +329,12 @@ bool board::check_valid(int x)
 		int i = x / n, j = x % n;
 		if (i < m)
 		{
-			if (status[i][j] & 1 || status[i][j] > 15)
+			if (status[i][j] & 1 || status[i][j] >= 15)
 				return 0;
 		}
 		if (i)
 		{
-			if (status[i - 1][j] & 4 || status[i - 1][j] > 15)
+			if (status[i - 1][j] & 4 || status[i - 1][j] >= 15)
 				return 0;
 		}
 	}
@@ -324,12 +344,12 @@ bool board::check_valid(int x)
 		int i = x / (n + 1), j = x % (n + 1);
 		if (j < n)
 		{
-			if (status[i][j] & 8 || status[i][j] > 15)
+			if (status[i][j] & 8 || status[i][j] >= 15)
 				return 0;
 		}
 		if (j)
 		{
-			if (status[i][j - 1] & 2 || status[i][j - 1] > 15)
+			if (status[i][j - 1] & 2 || status[i][j - 1] >= 15)
 				return 0;
 		}
 	}

@@ -7,10 +7,7 @@
 
 const bool log_engine = 1;
 
-const long long max_execution = 1e15;
-
 const int max_depth = 30, // odd number for best result
-		  max_cycles = 10000,
 		  inf = 1e9;
 		  
 struct data
@@ -56,7 +53,7 @@ data prune(board &cur, int depth, int alpha, int beta) // alpha-beta pruning
 	
 	if (cur.end) best.value += cur.points[org_turn] >= cur.points[!org_turn]?1000:-1000;
 	if (depth <= 0 || cur.end) return best;
-
+	
 	ptr = hash_map.find(info);
 	if (ptr != hash_map.end()) return ptr->second;
 	
@@ -74,7 +71,7 @@ data prune(board &cur, int depth, int alpha, int beta) // alpha-beta pruning
 					best.move = i;
 				}
 				alpha = max(alpha, best.value);
-				if (beta <= alpha) break;
+				//if (beta <= alpha) break;
 			}
 		hash_map[info] = best;
 		return best;
@@ -93,7 +90,7 @@ data prune(board &cur, int depth, int alpha, int beta) // alpha-beta pruning
 					best.move = i;
 				}
 				beta = min(beta, best.value);
-				if (beta <= alpha) break;
+				//if (beta <= alpha) break;
 			}
 		hash_map[info] = best;
 		return best;
@@ -103,7 +100,7 @@ data prune(board &cur, int depth, int alpha, int beta) // alpha-beta pruning
 int board::generate_move()
 {
 	start_time = clock();
-	hash_map.clear();
+	//hash_map.clear();
 	org_turn = this->turn;
 	data result = prune(*this, max_depth, -inf, inf); 
 	end_time = clock();
