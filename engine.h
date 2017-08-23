@@ -5,7 +5,7 @@
 #include <map>
 #include <cstdlib>
 
-const bool log_engine = 0;
+const bool log_engine = 1;
 
 const long long max_execution = 1e15;
 
@@ -26,7 +26,7 @@ struct hash_info
 
 struct compare_hash
 {
-	inline bool operator()(const hash_info &a, const hash_info &b) const
+	bool operator()(const hash_info &a, const hash_info &b) const
 	{
 		if (a.hash != b.hash) return a.hash < b.hash;
 		else if (a.points_1 != b.points_1) return a.points_1 < b.points_1;
@@ -47,16 +47,16 @@ long long board::get_hash()
 	return ans;
 }
 
-data prune(board &cur, int depth, int alpha, int beta, const bool &org_turn) // alpha-beta pruning
+data prune(board &cur, int depth, int alpha, int beta) // alpha-beta pruning
 {
 	int m = game_height, n = game_width;
-	data best, tmp = {cur.points[org_turn] - cur.points[!org_turn], 0};
+	data best = {cur.points[org_turn] - cur.points[!org_turn], 0}, tmp;
 	map <hash_info, data>::iterator ptr;
-	
-	if (cur.end) tmp.value += cur.points[org_turn] >= cur.points[!org_turn]?100000:-100000;
-	if (depth <= 0 || cur.end) return tmp;
-	
 	hash_info info = {cur.hash, cur.points[0], cur.points[1]};
+	
+	if (cur.end) best.value += cur.points[org_turn] >= cur.points[!org_turn]?1000:-1000;
+	if (depth <= 0 || cur.end) return best;
+
 	ptr = hash_map.find(info);
 	if (ptr != hash_map.end()) return ptr->second;
 	
@@ -66,9 +66,8 @@ data prune(board &cur, int depth, int alpha, int beta, const bool &org_turn) // 
 		for (int i = 0; i < max_moves; ++i)
 			if (cur.check_valid(i))
 			{
-				board tar(cur);
-				tar.move(i);
-				tmp = prune(tar, depth - (tar.turn != cur.turn), alpha, beta, org_turn);
+				board tar(cur); tar.move(i);
+				tmp = prune(tar, depth - (tar.turn != cur.turn), alpha, beta);
 				if (tmp.value > best.value)
 				{
 					best.value = tmp.value;
@@ -86,9 +85,8 @@ data prune(board &cur, int depth, int alpha, int beta, const bool &org_turn) // 
 		for (int i = 0; i < max_moves; ++i)
 			if (cur.check_valid(i))
 			{
-				board tar(cur);
-				tar.move(i);
-				tmp = prune(tar, depth - (tar.turn != cur.turn), alpha, beta, org_turn);
+				board tar(cur); tar.move(i);
+				tmp = prune(tar, depth - (tar.turn != cur.turn), alpha, beta);
 				if (tmp.value < best.value)
 				{
 					best.value = tmp.value;
@@ -106,7 +104,8 @@ int board::generate_move()
 {
 	start_time = clock();
 	hash_map.clear();
-	data result = prune(*this, max_depth, -inf, inf, org_turn); 
+	org_turn = this->turn;
+	data result = prune(*this, max_depth, -inf, inf); 
 	end_time = clock();
 	printf("\nTime: %.3fs    \n", (end_time - start_time) / double(CLOCKS_PER_SEC));
 	if (log_engine)
