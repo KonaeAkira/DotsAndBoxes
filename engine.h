@@ -4,10 +4,12 @@
 #include "game.h"
 #include <map>
 #include <cstdlib>
+#include <mutex>
+using namespace std;
 
-const bool log_engine = 1;
+const bool log_engine = 0;
 
-const int max_depth = 30, // odd number for best result
+const int max_depth = 4,
 		  inf = 1e9;
 		  
 struct data
@@ -15,94 +17,72 @@ struct data
 	int value, move;
 };
 
-struct hash_info
-{
-	long long hash;
-	int points_1, points_2;
-};
-
-struct compare_hash
-{
-	bool operator()(const hash_info &a, const hash_info &b) const
-	{
-		if (a.hash != b.hash) return a.hash < b.hash;
-		else if (a.points_1 != b.points_1) return a.points_1 < b.points_1;
-		else return a.points_2 < b.points_2;
-	}
-};
-
-map <hash_info, data, compare_hash> hash_map;
+map <long long, data> transposition;
 bool org_turn;
 int start_time, end_time;
 
-long long board::get_hash()
-{
-	long long ans = 0;
-	for (int i = 0; i < max_moves; ++i)
-		ans |= (!check_valid(i) << i);
-	ans |= (int)turn << 31;
-	return ans;
-}
+mutex mtx;
 
-data prune(board &cur, int depth, int alpha, int beta) // alpha-beta pruning
+data evaluate(board &cur, bool complete_search = 0, int depth = max_depth)
 {
 	int m = game_height, n = game_width;
-	data best = {cur.points[org_turn] - cur.points[!org_turn], 0}, tmp;
-	map <hash_info, data>::iterator ptr;
-	hash_info info = {cur.hash, cur.points[0], cur.points[1]};
+	data tmp = {cur.points[cur.turn] - cur.points[!cur.turn], -1}, best = {-inf, -1};
 	
-	if (cur.end) best.value += cur.points[org_turn] >= cur.points[!org_turn]?1000:-1000;
-	if (depth <= 0 || cur.end) return best;
+	// return current board if game ended
+	if (cur.end) return tmp;
 	
-	ptr = hash_map.find(info);
-	if (ptr != hash_map.end()) return ptr->second;
-	
-	else if (cur.turn == org_turn) // max
+	while (!mtx.try_lock());
+	// return if current state cannot be reached
+	if (cur.hash != (cur.hash | game.hash) && complete_search)
 	{
-		best.value = -inf;
-		for (int i = 0; i < max_moves; ++i)
-			if (cur.check_valid(i))
-			{
-				board tar(cur); tar.move(i);
-				tmp = prune(tar, depth - (tar.turn != cur.turn), alpha, beta);
-				if (tmp.value > best.value)
-				{
-					best.value = tmp.value;
-					best.move = i;
-				}
-				alpha = max(alpha, best.value);
-				//if (beta <= alpha) break;
-			}
-		hash_map[info] = best;
-		return best;
+		mtx.unlock();
+		board tar(game);
+		evaluate(tar, 1);
+		return tmp;
 	}
-	else // min
+	// check for an existing result from the producer
+	map <long long, data>::iterator ptr;
+	ptr = transposition.find(cur.hash);
+	if (ptr != transposition.end())
 	{
-		best.value = inf;
-		for (int i = 0; i < max_moves; ++i)
-			if (cur.check_valid(i))
-			{
-				board tar(cur); tar.move(i);
-				tmp = prune(tar, depth - (tar.turn != cur.turn), alpha, beta);
-				if (tmp.value < best.value)
-				{
-					best.value = tmp.value;
-					best.move = i;
-				}
-				beta = min(beta, best.value);
-				//if (beta <= alpha) break;
-			}
-		hash_map[info] = best;
-		return best;
+		mtx.unlock();
+		return ptr->second;
 	}
+	mtx.unlock();
+	
+	// return current state if max_depth is reached
+	if (!complete_search && !depth) return tmp;
+	
+	// recursive search for all children
+	for (int i = 0; i < max_moves; ++i)
+		if (cur.check_valid(i))
+		{
+			board tar(cur); tar.move(i);
+			tmp = evaluate(tar, complete_search, depth - (cur.turn ^ tar.turn));
+			if (cur.turn ^ tar.turn) tmp.value = -tmp.value;
+			if (tmp.value > best.value)
+			{
+				best.value = tmp.value;
+				best.move = i;
+			}
+		}
+	tmp = best;
+	tmp.value -= cur.points[cur.turn] - cur.points[!cur.turn];
+	
+	// save result if executed by the producer
+	while (!mtx.try_lock());
+	if (complete_search && cur.hash == (cur.hash | game.hash))
+		transposition[cur.hash] = tmp;
+	mtx.unlock();
+	
+	return best;
 }
 
 int board::generate_move()
 {
 	start_time = clock();
-	//hash_map.clear();
 	org_turn = this->turn;
-	data result = prune(*this, max_depth, -inf, inf); 
+	data result = evaluate(*this); 
 	end_time = clock();
 	printf("\nTime: %.3fs    \n", (end_time - start_time) / double(CLOCKS_PER_SEC));
 	if (log_engine)

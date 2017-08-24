@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <conio.h>
+
+#include <thread>
+
 #include "game.h"
 #include "engine.h"
 using namespace std;
@@ -10,10 +13,14 @@ char dump[1000];
 
 int main()
 {
-	board game;
 	srand(time(NULL));
+	
+	board clone(game);
+	thread producer(evaluate, ref(game), 1, 0);
+	
 	system("cls");
 	game.draw();
+	
 	while (!game.end)
 	{
 		int x;
@@ -50,5 +57,6 @@ int main()
 		game.re_draw();
 		//getch();
 	}
+	producer.join();
 	return 0;
 }

@@ -80,7 +80,7 @@ public:
 	int generate_move();
 	long long get_hash();
 	void random_move();
-};
+} game;
 
 void board::random_move()
 {
@@ -317,7 +317,6 @@ void board::move(int x)
 	}
 	end = points[0] + points[1] == m * n;
 	turn ^= !bonus;
-	hash ^= (long long)(!bonus) << 63;
 }
 
 bool board::check_valid(int x)
