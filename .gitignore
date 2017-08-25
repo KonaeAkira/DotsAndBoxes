@@ -3,3 +3,4 @@ README.md
 *.exe
 *.o
 log.txt
+transposition.dat

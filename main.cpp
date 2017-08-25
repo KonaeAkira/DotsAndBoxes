@@ -15,9 +15,16 @@ int main()
 {
 	srand(time(NULL));
 	
-	board clone(game);
-	thread producer(evaluate, ref(game), 1, 0);
+	system("cls");
+	//import_data();
 	
+	board clone(game);
+	thread producer(evaluate, ref(clone), 1, 0);
+	/*
+	producer.join();
+	export_data();
+	return 0;
+	*/
 	system("cls");
 	game.draw();
 	
@@ -29,7 +36,9 @@ int main()
 		{
 			// PC
 			x = game.generate_move();
+			mtx.lock();
 			game.move(x);
+			mtx.unlock();
 		}
 		else
 		{
@@ -40,13 +49,11 @@ int main()
 				else if (game.check_valid(x))
 				{
 					printf("                \n");
+					mtx.lock();
 					game.move(x);
+					mtx.unlock();
 				}
-				else
-				{
-					printf("Invalid input!\n");
-					game.random_move();
-				}
+				else printf("Invalid input!\n");
 			}
 			else
 			{
@@ -58,5 +65,6 @@ int main()
 		//getch();
 	}
 	producer.join();
+	//export_data();
 	return 0;
 }
