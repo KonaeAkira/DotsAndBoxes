@@ -12,7 +12,7 @@ using namespace std;
 
 const bool log_engine = 0;
 
-const int max_depth = 2,
+const int max_depth = 4,
 		  inf = 1e9;
 		  
 struct data
@@ -23,6 +23,7 @@ struct data
 map <long long, data> transposition, tmp_map;
 bool org_turn;
 int start_time, end_time;
+long long last_hash = 0;
 
 mutex mtx;
 
@@ -67,6 +68,10 @@ data evaluate(board &cur, bool complete_search = 0, int depth = max_depth)
 	// return current board if game ended
 	if (cur.end) return tmp;
 	
+	// check if producer already has a new target
+	if (cur.hash != (cur.hash ^ last_hash) && complete_search)
+		return tmp;
+	
 	while (!mtx.try_lock());
 	game_hash = game.hash;
 	// return if current state cannot be reached
@@ -74,7 +79,11 @@ data evaluate(board &cur, bool complete_search = 0, int depth = max_depth)
 	{
 		board tar(game);
 		mtx.unlock();
-		evaluate(tar, 1);
+		if (last_hash != game_hash)
+		{
+			last_hash = game_hash;
+			evaluate(tar, 1);
+		}
 		return tmp;
 	}
 	// check for an existing result from the producer

@@ -34,7 +34,6 @@ int main()
 		game.save_cache();
 		if (game.turn)
 		{
-			// PC
 			x = game.generate_move();
 			mtx.lock();
 			game.move(x);
